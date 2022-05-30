@@ -1,9 +1,15 @@
-import {WebPlugin} from '@capacitor/core';
-import type {OAuth2AuthenticateOptions, OAuth2ClientPlugin, OAuth2RefreshTokenOptions} from "./definitions";
-import {WebOptions, WebUtils} from "./web-utils";
+import { WebPlugin } from "@capacitor/core";
+import type {
+    OAuth2AuthenticateOptions,
+    OAuth2ClientPlugin,
+    OAuth2RefreshTokenOptions,
+} from "./definitions";
+import { WebOptions, WebUtils } from "./web-utils";
 
-export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlugin {
-
+export class OAuth2ClientPluginWeb
+    extends WebPlugin
+    implements OAuth2ClientPlugin
+{
     private webOptions: WebOptions;
     private windowHandle: Window | null;
     private intervalId: number;
@@ -26,18 +32,29 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
             // validate
             if (!this.webOptions.appId || this.webOptions.appId.length == 0) {
                 reject(new Error("ERR_PARAM_NO_APP_ID"));
-            } else if (!this.webOptions.authorizationBaseUrl || this.webOptions.authorizationBaseUrl.length == 0) {
+            } else if (
+                !this.webOptions.authorizationBaseUrl ||
+                this.webOptions.authorizationBaseUrl.length == 0
+            ) {
                 reject(new Error("ERR_PARAM_NO_AUTHORIZATION_BASE_URL"));
-            } else if (!this.webOptions.redirectUrl || this.webOptions.redirectUrl.length == 0) {
+            } else if (
+                !this.webOptions.redirectUrl ||
+                this.webOptions.redirectUrl.length == 0
+            ) {
                 reject(new Error("ERR_PARAM_NO_REDIRECT_URL"));
-            } else if (!this.webOptions.responseType || this.webOptions.responseType.length == 0) {
+            } else if (
+                !this.webOptions.responseType ||
+                this.webOptions.responseType.length == 0
+            ) {
                 reject(new Error("ERR_PARAM_NO_RESPONSE_TYPE"));
             } else {
                 // init internal control params
                 let loopCount = this.loopCount;
                 this.windowClosedByPlugin = false;
                 // open window
-                const authorizationUrl = WebUtils.getAuthorizationUrl(this.webOptions);
+                const authorizationUrl = WebUtils.getAuthorizationUrl(
+                    this.webOptions
+                );
                 if (this.webOptions.logsEnabled) {
                     this.doLog("Authorization url: " + authorizationUrl);
                 }
@@ -45,12 +62,16 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
                     authorizationUrl,
                     this.webOptions.windowTarget,
                     this.webOptions.windowOptions,
-                    this.webOptions.windowReplace);
+                    this.webOptions.windowReplace
+                );
                 // wait for redirect and resolve the
                 this.intervalId = window.setInterval(() => {
                     if (loopCount-- < 0) {
                         this.closeWindow();
-                    } else if (this.windowHandle?.closed && !this.windowClosedByPlugin) {
+                    } else if (
+                        this.windowHandle?.closed &&
+                        !this.windowClosedByPlugin
+                    ) {
                         window.clearInterval(this.intervalId);
                         reject(new Error("USER_CANCELLED"));
                     } else {
@@ -61,54 +82,136 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
                             // ignore DOMException: Blocked a frame with origin "http://localhost:4200" from accessing a cross-origin frame.
                         }
 
-                        if (href != null && href.indexOf(this.webOptions.redirectUrl) >= 0) {
+                        if (
+                            href != null &&
+                            href.indexOf(this.webOptions.redirectUrl) >= 0
+                        ) {
                             if (this.webOptions.logsEnabled) {
                                 this.doLog("Url from Provider: " + href);
                             }
-                            let authorizationRedirectUrlParamObj = WebUtils.getUrlParams(href);
+                            let authorizationRedirectUrlParamObj =
+                                WebUtils.getUrlParams(href);
                             if (authorizationRedirectUrlParamObj) {
                                 if (this.webOptions.logsEnabled) {
-                                    this.doLog("Authorization response:", authorizationRedirectUrlParamObj);
+                                    this.doLog(
+                                        "Authorization response:",
+                                        authorizationRedirectUrlParamObj
+                                    );
                                 }
                                 window.clearInterval(this.intervalId);
                                 // check state
-                                if (authorizationRedirectUrlParamObj.state === this.webOptions.state) {
+                                if (
+                                    authorizationRedirectUrlParamObj.state ===
+                                    this.webOptions.state
+                                ) {
                                     if (this.webOptions.accessTokenEndpoint) {
                                         const self = this;
-                                        let authorizationCode = authorizationRedirectUrlParamObj.code;
+                                        let authorizationCode =
+                                            authorizationRedirectUrlParamObj.code;
                                         if (authorizationCode) {
-                                            const tokenRequest = new XMLHttpRequest();
+                                            const tokenRequest =
+                                                new XMLHttpRequest();
                                             tokenRequest.onload = function () {
                                                 if (this.status === 200) {
-                                                    let accessTokenResponse = JSON.parse(this.response);
-                                                    if (self.webOptions.logsEnabled) {
-                                                        self.doLog("Access token response:", accessTokenResponse);
+                                                    let accessTokenResponse =
+                                                        JSON.parse(
+                                                            this.response
+                                                        );
+                                                    if (
+                                                        self.webOptions
+                                                            .logsEnabled
+                                                    ) {
+                                                        self.doLog(
+                                                            "Access token response:",
+                                                            accessTokenResponse
+                                                        );
                                                     }
-                                                    self.requestResource(accessTokenResponse.access_token, resolve, reject, authorizationRedirectUrlParamObj, accessTokenResponse);
+                                                    self.requestResource(
+                                                        accessTokenResponse.access_token,
+                                                        resolve,
+                                                        reject,
+                                                        authorizationRedirectUrlParamObj,
+                                                        accessTokenResponse
+                                                    );
                                                 }
                                             };
                                             tokenRequest.onerror = function () {
                                                 // always log error because of CORS hint
-                                                self.doLog("ERR_GENERAL: See client logs. It might be CORS. Status text: " + this.statusText);
-                                                reject(new Error("ERR_GENERAL"));
+                                                self.doLog(
+                                                    "ERR_GENERAL: See client logs. It might be CORS. Status text: " +
+                                                        this.statusText
+                                                );
+                                                reject(
+                                                    new Error("ERR_GENERAL")
+                                                );
                                             };
-                                            tokenRequest.open("POST", this.webOptions.accessTokenEndpoint, true);
-                                            tokenRequest.setRequestHeader('accept', 'application/json');
-                                            tokenRequest.setRequestHeader('cache-control', 'no-cache');
-                                            tokenRequest.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
-                                            tokenRequest.send(WebUtils.getTokenEndpointData(this.webOptions, authorizationCode));
+                                            tokenRequest.open(
+                                                "POST",
+                                                this.webOptions
+                                                    .accessTokenEndpoint,
+                                                true
+                                            );
+                                            tokenRequest.setRequestHeader(
+                                                "accept",
+                                                "application/json"
+                                            );
+                                            tokenRequest.setRequestHeader(
+                                                "cache-control",
+                                                "no-cache"
+                                            );
+                                            tokenRequest.setRequestHeader(
+                                                "content-type",
+                                                "application/x-www-form-urlencoded"
+                                            );
+                                            if (
+                                                this.webOptions
+                                                    .additionalResourceHeaders
+                                            ) {
+                                                for (const key in this
+                                                    .webOptions
+                                                    .additionalResourceHeaders) {
+                                                    tokenRequest.setRequestHeader(
+                                                        key,
+                                                        this.webOptions
+                                                            .additionalResourceHeaders[
+                                                            key
+                                                        ]
+                                                    );
+                                                }
+                                            }
+                                            tokenRequest.send(
+                                                WebUtils.getTokenEndpointData(
+                                                    this.webOptions,
+                                                    authorizationCode
+                                                )
+                                            );
                                         } else {
-                                            reject(new Error("ERR_NO_AUTHORIZATION_CODE"));
+                                            reject(
+                                                new Error(
+                                                    "ERR_NO_AUTHORIZATION_CODE"
+                                                )
+                                            );
                                         }
                                         this.closeWindow();
                                     } else {
                                         // if no accessTokenEndpoint exists request the resource
-                                        this.requestResource(authorizationRedirectUrlParamObj.access_token, resolve, reject, authorizationRedirectUrlParamObj);
+                                        this.requestResource(
+                                            authorizationRedirectUrlParamObj.access_token,
+                                            resolve,
+                                            reject,
+                                            authorizationRedirectUrlParamObj
+                                        );
                                     }
                                 } else {
                                     if (this.webOptions.logsEnabled) {
-                                        this.doLog("State from web options: " + this.webOptions.state);
-                                        this.doLog("State returned from provider: " + authorizationRedirectUrlParamObj.state);
+                                        this.doLog(
+                                            "State from web options: " +
+                                                this.webOptions.state
+                                        );
+                                        this.doLog(
+                                            "State returned from provider: " +
+                                                authorizationRedirectUrlParamObj.state
+                                        );
                                     }
                                     reject(new Error("ERR_STATES_NOT_MATCH"));
                                     this.closeWindow();
@@ -124,7 +227,13 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
 
     private readonly MSG_RETURNED_TO_JS = "Returned to JS:";
 
-    private requestResource(accessToken: string, resolve: any, reject: (reason?: any) => void, authorizationResponse: any, accessTokenResponse: any = null) {
+    private requestResource(
+        accessToken: string,
+        resolve: any,
+        reject: (reason?: any) => void,
+        authorizationResponse: any,
+        accessTokenResponse: any = null
+    ) {
         if (this.webOptions.resourceUrl) {
             const logsEnabled = this.webOptions.logsEnabled;
             if (logsEnabled) {
@@ -143,7 +252,12 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
                             self.doLog("Resource response:", resp);
                         }
                         if (resp) {
-                            self.assignResponses(resp, accessToken, authorizationResponse, accessTokenResponse);
+                            self.assignResponses(
+                                resp,
+                                accessToken,
+                                authorizationResponse,
+                                accessTokenResponse
+                            );
                         }
                         if (logsEnabled) {
                             self.doLog(self.MSG_RETURNED_TO_JS, resp);
@@ -162,16 +276,25 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
                     self.closeWindow();
                 };
                 request.open("GET", this.webOptions.resourceUrl, true);
-                request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+                request.setRequestHeader(
+                    "Authorization",
+                    `Bearer ${accessToken}`
+                );
                 if (this.webOptions.additionalResourceHeaders) {
-                    for (const key in this.webOptions.additionalResourceHeaders) {
-                        request.setRequestHeader(key, this.webOptions.additionalResourceHeaders[key]);
+                    for (const key in this.webOptions
+                        .additionalResourceHeaders) {
+                        request.setRequestHeader(
+                            key,
+                            this.webOptions.additionalResourceHeaders[key]
+                        );
                     }
                 }
                 request.send();
             } else {
                 if (logsEnabled) {
-                    this.doLog("No accessToken was provided although you configured a resourceUrl. Remove the resourceUrl from the config.");
+                    this.doLog(
+                        "No accessToken was provided although you configured a resourceUrl. Remove the resourceUrl from the config."
+                    );
                 }
                 reject(new Error("ERR_NO_ACCESS_TOKEN"));
                 this.closeWindow();
@@ -179,7 +302,12 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
         } else {
             // if no resource url exists just return the accessToken response
             const resp = {};
-            this.assignResponses(resp, accessToken, authorizationResponse, accessTokenResponse);
+            this.assignResponses(
+                resp,
+                accessToken,
+                authorizationResponse,
+                accessTokenResponse
+            );
             if (this.webOptions.logsEnabled) {
                 this.doLog(this.MSG_RETURNED_TO_JS, resp);
             }
@@ -188,7 +316,12 @@ export class OAuth2ClientPluginWeb extends WebPlugin implements OAuth2ClientPlug
         }
     }
 
-    assignResponses(resp: any, accessToken: string, authorizationResponse: any, accessTokenResponse: any = null): void {
+    assignResponses(
+        resp: any,
+        accessToken: string,
+        authorizationResponse: any,
+        accessTokenResponse: any = null
+    ): void {
         // #154
         if (authorizationResponse) {
             resp["authorization_response"] = authorizationResponse;
