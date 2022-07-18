@@ -35,6 +35,12 @@ export interface OAuth2RefreshTokenOptions {
      * A space-delimited list of permissions that identify the resources that your application could access on the user's behalf.
      */
     scope?: string;
+
+    clientSecret?: string;
+
+    additionalResourceHeaders?: {
+        [key: string]: string;
+    };
 }
 export interface OAuth2AuthenticateBaseOptions {
     /**
@@ -42,7 +48,10 @@ export interface OAuth2AuthenticateBaseOptions {
      *
      * required!
      */
+
     appId?: string;
+
+    clientSecret?: string;
     /**
      * The base url for retrieving tokens depending on the response type from a OAuth 2 provider. e.g. https://accounts.google.com/o/oauth2/auth
      *
@@ -88,6 +97,7 @@ export interface OAuth2AuthenticateBaseOptions {
     /**
      * Additional parameters for the created authorization url
      */
+
     additionalParameters?: {
         [key: string]: string;
     };
@@ -107,7 +117,8 @@ export interface OAuth2AuthenticateBaseOptions {
         [key: string]: string;
     };
 }
-export interface OAuth2AuthenticateOptions extends OAuth2AuthenticateBaseOptions {
+export interface OAuth2AuthenticateOptions
+    extends OAuth2AuthenticateBaseOptions {
     /**
      * Custom options for the platform "web"
      */

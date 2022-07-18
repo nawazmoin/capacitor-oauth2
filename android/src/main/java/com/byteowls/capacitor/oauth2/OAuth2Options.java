@@ -14,6 +14,8 @@ public class OAuth2Options {
     private String responseType;
     private String redirectUrl;
 
+    private String clientSecret;
+
     private String scope;
     private String state;
 
@@ -52,6 +54,13 @@ public class OAuth2Options {
     public void setAuthorizationBaseUrl(String authorizationBaseUrl) {
         this.authorizationBaseUrl = authorizationBaseUrl;
     }
+
+    public void setClientSecret(String clientSecret) {
+      this.clientSecret = clientSecret;
+    }
+
+    public String getClientSecret() {  return clientSecret;  }
+
 
     public String getAccessTokenEndpoint() {
         return accessTokenEndpoint;
@@ -108,6 +117,7 @@ public class OAuth2Options {
     public void setRedirectUrl(String redirectUrl) {
         this.redirectUrl = redirectUrl;
     }
+
 
     public String getCustomHandlerClass() {
         return customHandlerClass;

@@ -24,6 +24,7 @@ import net.openid.appauth.AuthorizationRequest;
 import net.openid.appauth.AuthorizationResponse;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.AuthorizationServiceConfiguration;
+import net.openid.appauth.ClientSecretBasic;
 import net.openid.appauth.GrantTypeValues;
 import net.openid.appauth.TokenRequest;
 import net.openid.appauth.TokenResponse;
@@ -42,6 +43,8 @@ public class OAuth2ClientPlugin extends Plugin {
     private static final String PARAM_SCOPE = "scope";
     private static final String PARAM_STATE = "state";
 
+    private static final String PARAM_CLIENT_SECRET = "clientSecret";
+
     private static final String PARAM_ACCESS_TOKEN_ENDPOINT = "accessTokenEndpoint";
     private static final String PARAM_PKCE_ENABLED = "pkceEnabled";
     private static final String PARAM_RESOURCE_URL = "resourceUrl";
@@ -51,6 +54,8 @@ public class OAuth2ClientPlugin extends Plugin {
     // Activity result handling
     private static final String PARAM_ANDROID_HANDLE_RESULT_ON_NEW_INTENT = "android.handleResultOnNewIntent";
     private static final String PARAM_ANDROID_HANDLE_RESULT_ON_ACTIVITY_RESULT = "android.handleResultOnActivityResult";
+
+
 
     // Refresh token params
     private static final String PARAM_REFRESH_TOKEN = "refreshToken";
@@ -115,23 +120,21 @@ public class OAuth2ClientPlugin extends Plugin {
         this.authService = new AuthorizationService(getContext());
 
         AuthorizationServiceConfiguration config = new AuthorizationServiceConfiguration(
-            Uri.parse(""),
-            Uri.parse(oAuth2RefreshTokenOptions.getAccessTokenEndpoint())
-        );
+                Uri.parse(""),
+                Uri.parse(oAuth2RefreshTokenOptions.getAccessTokenEndpoint()));
 
         if (this.authState == null) {
             this.authState = new AuthState(config);
         }
 
         TokenRequest tokenRequest = new TokenRequest.Builder(
-            config,
-            oAuth2RefreshTokenOptions.getAppId()
-        ).setGrantType(GrantTypeValues.REFRESH_TOKEN)
-            .setScope(oAuth2RefreshTokenOptions.getScope())
-            .setRefreshToken(oAuth2RefreshTokenOptions.getRefreshToken())
-            .build();
+                config,
+                oAuth2RefreshTokenOptions.getAppId()).setGrantType(GrantTypeValues.REFRESH_TOKEN)
+                .setScope(oAuth2RefreshTokenOptions.getScope())
+                .setRefreshToken(oAuth2RefreshTokenOptions.getRefreshToken())
+                .build();
 
-        this.authService.performTokenRequest(tokenRequest, (response1, ex) -> {
+        this.authService.performTokenRequest(tokenRequest, new ClientSecretBasic(oauth2Options.getClientSecret()), (response1, ex) -> {
             this.authState.update(response1, ex);
             if (ex != null) {
                 call.reject(ERR_GENERAL, ex);
@@ -153,15 +156,18 @@ public class OAuth2ClientPlugin extends Plugin {
 
     @PluginMethod()
     public void authenticate(final PluginCall call) {
+        System.out.println("entered authenticate from android");
         this.callbackId = call.getCallbackId();
         disposeAuthService();
         oauth2Options = buildAuthenticateOptions(call.getData());
         if (oauth2Options.getCustomHandlerClass() != null) {
             if (oauth2Options.isLogsEnabled()) {
-                Log.i(getLogTag(), "Entering custom handler: " + oauth2Options.getCustomHandlerClass().getClass().getName());
+                Log.i(getLogTag(),
+                        "Entering custom handler: " + oauth2Options.getCustomHandlerClass().getClass().getName());
             }
             try {
-                Class<OAuth2CustomHandler> handlerClass = (Class<OAuth2CustomHandler>) Class.forName(oauth2Options.getCustomHandlerClass());
+                Class<OAuth2CustomHandler> handlerClass = (Class<OAuth2CustomHandler>) Class
+                        .forName(oauth2Options.getCustomHandlerClass());
                 OAuth2CustomHandler handler = handlerClass.newInstance();
                 handler.getAccessToken(getActivity(), call, new AccessTokenCallback() {
                     @Override
@@ -217,29 +223,30 @@ public class OAuth2ClientPlugin extends Plugin {
             if (oauth2Options.getAccessTokenEndpoint() != null) {
                 accessTokenUri = Uri.parse(oauth2Options.getAccessTokenEndpoint());
             } else {
-                // appAuth does not allow to be the accessTokenUri empty although it is not used unit performTokenRequest
+                // appAuth does not allow to be the accessTokenUri empty although it is not used
+                // unit performTokenRequest
                 accessTokenUri = authorizationUri;
             }
 
-            AuthorizationServiceConfiguration config = new AuthorizationServiceConfiguration(authorizationUri, accessTokenUri);
+            AuthorizationServiceConfiguration config = new AuthorizationServiceConfiguration(authorizationUri,
+                    accessTokenUri);
 
             if (this.authState == null) {
                 this.authState = new AuthState(config);
             }
 
             AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(
-                config,
-                oauth2Options.getAppId(),
-                oauth2Options.getResponseType(),
-                Uri.parse(oauth2Options.getRedirectUrl())
-            );
+                    config,
+                    oauth2Options.getAppId(),
+                    oauth2Options.getResponseType(),
+                    Uri.parse(oauth2Options.getRedirectUrl()));
 
             // app auth always uses a state
             if (oauth2Options.getState() != null) {
                 builder.setState(oauth2Options.getState());
             }
             builder.setScope(oauth2Options.getScope());
-            if (oauth2Options.isPkceEnabled()) {
+            if (oauth2Options.isPkceEnabl ed()) {
                 builder.setCodeVerifier(oauth2Options.getPkceCodeVerifier());
             } else {
                 builder.setCodeVerifier(null);
@@ -284,10 +291,12 @@ public class OAuth2ClientPlugin extends Plugin {
 
     @PluginMethod()
     public void logout(final PluginCall call) {
-        String customHandlerClassname = ConfigUtils.getParam(String.class, call.getData(), PARAM_ANDROID_CUSTOM_HANDLER_CLASS);
+        String customHandlerClassname = ConfigUtils.getParam(String.class, call.getData(),
+                PARAM_ANDROID_CUSTOM_HANDLER_CLASS);
         if (customHandlerClassname != null && customHandlerClassname.length() > 0) {
             try {
-                Class<OAuth2CustomHandler> handlerClass = (Class<OAuth2CustomHandler>) Class.forName(customHandlerClassname);
+                Class<OAuth2CustomHandler> handlerClass = (Class<OAuth2CustomHandler>) Class
+                        .forName(customHandlerClassname);
                 OAuth2CustomHandler handler = handlerClass.newInstance();
                 boolean successful = handler.logout(getActivity(), call);
                 if (successful) {
@@ -309,7 +318,8 @@ public class OAuth2ClientPlugin extends Plugin {
 
     @Override
     protected void handleOnNewIntent(Intent intent) {
-        // this is a experimental hook and only usable if the android system kills the app between
+        // this is a experimental hook and only usable if the android system kills the
+        // app between
         if (this.oauth2Options != null && this.oauth2Options.isHandleResultOnNewIntent()) {
             // with this I have no way to check if this intent is for this plugin
             PluginCall savedCall = this.bridge.getSavedCall(this.callbackId);
@@ -362,38 +372,41 @@ public class OAuth2ClientPlugin extends Plugin {
                 return;
             }
 
-            // this response may contain the authorizationCode but also idToken and accessToken depending on the flow chosen by responseType
+            // this response may contain the authorizationCode but also idToken and
+            // accessToken depending on the flow chosen by responseType
             if (authorizationResponse != null) {
+                System.out.print(authorizationResponse);
                 if (oauth2Options.isLogsEnabled()) {
                     Log.i(getLogTag(), "Authorization response:\n" + authorizationResponse.jsonSerializeString());
                 }
                 // if there is a tokenEndpoint configured try to get the accessToken from it.
-                // it might be already in the authorizationResponse but tokenEndpoint might deliver other tokens.
+                // it might be already in the authorizationResponse but tokenEndpoint might
+                // deliver other tokens.
                 if (oauth2Options.getAccessTokenEndpoint() != null) {
                     this.authService = new AuthorizationService(getContext());
                     TokenRequest tokenExchangeRequest;
                     try {
                         tokenExchangeRequest = authorizationResponse.createTokenExchangeRequest();
-                        this.authService.performTokenRequest(tokenExchangeRequest, (accessTokenResponse, exception) -> {
+                        this.authService.performTokenRequest(tokenExchangeRequest, new ClientSecretBasic(oauth2Options.getClientSecret()), (accessTokenResponse, exception) -> {
                             authState.update(accessTokenResponse, exception);
                             if (exception != null) {
                                 savedCall.reject(ERR_AUTHORIZATION_FAILED, exception);
                             } else {
                                 if (accessTokenResponse != null) {
                                     if (oauth2Options.isLogsEnabled()) {
-                                        Log.i(getLogTag(), "Access token response:\n" + accessTokenResponse.jsonSerializeString());
+                                        Log.i(getLogTag(),
+                                                "Access token response:\n" + accessTokenResponse.jsonSerializeString());
                                     }
                                     authState.performActionWithFreshTokens(authService,
-                                        (accessToken, idToken, ex1) -> {
-                                            AsyncTask<String, Void, ResourceCallResult> asyncTask =
-                                                new ResourceUrlAsyncTask(
-                                                    savedCall,
-                                                    oauth2Options,
-                                                    getLogTag(),
-                                                    authorizationResponse,
-                                                    accessTokenResponse);
-                                            asyncTask.execute(accessToken);
-                                        });
+                                            (accessToken, idToken, ex1) -> {
+                                                AsyncTask<String, Void, ResourceCallResult> asyncTask = new ResourceUrlAsyncTask(
+                                                        savedCall,
+                                                        oauth2Options,
+                                                        getLogTag(),
+                                                        authorizationResponse,
+                                                        accessTokenResponse);
+                                                asyncTask.execute(accessToken);
+                                            });
                                 } else {
                                     resolveAuthorizationResponse(savedCall, authorizationResponse);
                                 }
@@ -409,9 +422,11 @@ public class OAuth2ClientPlugin extends Plugin {
                 savedCall.reject(ERR_NO_AUTHORIZATION_CODE);
             }
         } else {
-            // the intent is null because the provider send the redirect to the server, which would be valid
+            // the intent is null because the provider send the redirect to the server,
+            // which would be valid
             // the intent is null because the plugin user configured sth wrong incl.
-            // the provider does not support redirecting to a android app, which would be invalid
+            // the provider does not support redirecting to a android app, which would be
+            // invalid
             savedCall.reject(ERR_ANDROID_RESULT_NULL);
         }
     }
@@ -425,16 +440,29 @@ public class OAuth2ClientPlugin extends Plugin {
     OAuth2Options buildAuthenticateOptions(JSObject callData) {
         OAuth2Options o = new OAuth2Options();
         // required
-        o.setAppId(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_APP_ID)));
-        o.setAuthorizationBaseUrl(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_AUTHORIZATION_BASE_URL)));
-        o.setResponseType(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_RESPONSE_TYPE)));
-        o.setRedirectUrl(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REDIRECT_URL)));
+        o.setClientSecret(
+                ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_CLIENT_SECRET)));
+        o.setAppId(
+                ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_APP_ID)));
+        o.setAuthorizationBaseUrl(ConfigUtils.trimToNull(
+                ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_AUTHORIZATION_BASE_URL)));
+        o.setResponseType(ConfigUtils
+                .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_RESPONSE_TYPE)));
+        System.out.println("redirect url is :-"+ConfigUtils
+          .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REDIRECT_URL)));
+        System.out.println("client secret  is :-"+ConfigUtils
+          .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_CLIENT_SECRET)));
+        o.setRedirectUrl(ConfigUtils
+                .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REDIRECT_URL)));
+
 
         // optional
         Boolean logsEnabled = ConfigUtils.getOverwrittenAndroidParam(Boolean.class, callData, PARAM_LOGS_ENABLED);
         o.setLogsEnabled(logsEnabled != null && logsEnabled);
-        o.setResourceUrl(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_RESOURCE_URL)));
-        o.setAccessTokenEndpoint(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_ACCESS_TOKEN_ENDPOINT)));
+        o.setResourceUrl(ConfigUtils
+                .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_RESOURCE_URL)));
+        o.setAccessTokenEndpoint(ConfigUtils.trimToNull(
+                ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_ACCESS_TOKEN_ENDPOINT)));
         Boolean pkceEnabledObj = ConfigUtils.getOverwrittenAndroidParam(Boolean.class, callData, PARAM_PKCE_ENABLED);
         o.setPkceEnabled(pkceEnabledObj != null && pkceEnabledObj);
         if (o.isPkceEnabled()) {
@@ -447,7 +475,8 @@ public class OAuth2ClientPlugin extends Plugin {
             o.setState(ConfigUtils.getRandomString(20));
         }
 
-        Map<String, String> additionalParameters = ConfigUtils.getOverwrittenAndroidParamMap(callData, PARAM_ADDITIONAL_PARAMETERS);
+        Map<String, String> additionalParameters = ConfigUtils.getOverwrittenAndroidParamMap(callData,
+                PARAM_ADDITIONAL_PARAMETERS);
         if (!additionalParameters.isEmpty()) {
             for (Map.Entry<String, String> entry : additionalParameters.entrySet()) {
                 String key = entry.getKey();
@@ -464,11 +493,15 @@ public class OAuth2ClientPlugin extends Plugin {
                 }
             }
         }
-        o.setAdditionalResourceHeaders(ConfigUtils.getOverwrittenAndroidParamMap(callData, PARAM_ADDITIONAL_RESOURCE_HEADERS));
+        o.setAdditionalResourceHeaders(
+                ConfigUtils.getOverwrittenAndroidParamMap(callData, PARAM_ADDITIONAL_RESOURCE_HEADERS));
         // android only
-        o.setCustomHandlerClass(ConfigUtils.trimToNull(ConfigUtils.getParamString(callData, PARAM_ANDROID_CUSTOM_HANDLER_CLASS)));
-        o.setHandleResultOnNewIntent(ConfigUtils.getParam(Boolean.class, callData, PARAM_ANDROID_HANDLE_RESULT_ON_NEW_INTENT, false));
-        o.setHandleResultOnActivityResult(ConfigUtils.getParam(Boolean.class, callData, PARAM_ANDROID_HANDLE_RESULT_ON_ACTIVITY_RESULT, false));
+        o.setCustomHandlerClass(
+                ConfigUtils.trimToNull(ConfigUtils.getParamString(callData, PARAM_ANDROID_CUSTOM_HANDLER_CLASS)));
+        o.setHandleResultOnNewIntent(
+                ConfigUtils.getParam(Boolean.class, callData, PARAM_ANDROID_HANDLE_RESULT_ON_NEW_INTENT, false));
+        o.setHandleResultOnActivityResult(
+                ConfigUtils.getParam(Boolean.class, callData, PARAM_ANDROID_HANDLE_RESULT_ON_ACTIVITY_RESULT, false));
         if (!o.isHandleResultOnNewIntent() && !o.isHandleResultOnActivityResult()) {
             o.setHandleResultOnActivityResult(true);
         }
@@ -477,10 +510,15 @@ public class OAuth2ClientPlugin extends Plugin {
 
     OAuth2RefreshTokenOptions buildRefreshTokenOptions(JSObject callData) {
         OAuth2RefreshTokenOptions o = new OAuth2RefreshTokenOptions();
-        o.setAppId(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_APP_ID)));
-        o.setAccessTokenEndpoint(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_ACCESS_TOKEN_ENDPOINT)));
+        o.setAppId(
+                ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_APP_ID)));
+        o.setAccessTokenEndpoint(ConfigUtils.trimToNull(
+                ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_ACCESS_TOKEN_ENDPOINT)));
         o.setScope(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_SCOPE)));
-        o.setRefreshToken(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REFRESH_TOKEN)));
+        o.setRefreshToken(ConfigUtils
+                .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REFRESH_TOKEN)));
+        o.setAdditionalResourceHeaders(
+        ConfigUtils.getOverwrittenAndroidParamMap(callData, PARAM_ADDITIONAL_RESOURCE_HEADERS));
         return o;
     }
 
