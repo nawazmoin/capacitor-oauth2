@@ -117,8 +117,12 @@ public class OAuth2ClientPlugin: CAPPlugin {
             call.reject(self.ERR_PARAM_NO_REFRESH_TOKEN)
             return
         }
+
+        let callParameter: [String: Any] = getOverwritable(call, PARAM_ADDITIONAL_RESOURCE_HEADERS) as? [String: Any] ?? [:]
+        let additionalHeadersDict = buildStringDict(callParameter);
         
         let oauthSwift = OAuth2Swift(
+
             consumerKey: appId,
             consumerSecret: "", // never ever store the app secret on client!
             authorizeUrl: "",
@@ -135,7 +139,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
             parameters["scope"] = scope;
         }
         
-        oauthSwift.renewAccessToken(withRefreshToken: refreshToken, parameters: parameters) { result in
+        oauthSwift.renewAccessToken(withRefreshToken: refreshToken, parameters: parameters,headers:additionalHeadersDict) { result in
             switch result {
             case .success(let tokenSuccess):
                 do {
@@ -164,10 +168,12 @@ public class OAuth2ClientPlugin: CAPPlugin {
      * Plugin function to authenticate
      */
     @objc func authenticate(_ call: CAPPluginCall) {
+        log("entered into authenticate" )
         guard let appId = getOverwritableString(call, PARAM_APP_ID), !appId.isEmpty else {
             call.reject(self.ERR_PARAM_NO_APP_ID)
             return
         }
+        log("app id is:-" + appId)
         let resourceUrl = getOverwritableString(call, self.PARAM_RESOURCE_URL)
         let logsEnabled: Bool = getOverwritable(call, self.PARAM_LOGS_ENABLED) as? Bool ?? false
         // #71
@@ -176,6 +182,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
         // ######### Custom Handler ########
         
         if let handlerClassName = getString(call, PARAM_CUSTOM_HANDLER_CLASS) {
+            log("entered into handler" )
             if let handlerInstance = self.getOrLoadHandlerInstance(className: handlerClassName) {
                 log("Entering custom handler: " + handlerClassName)
                 handlerInstance.getAccessToken(viewController: (bridge?.viewController)!, call: call, success: { (accessToken) in
@@ -223,28 +230,35 @@ public class OAuth2ClientPlugin: CAPPlugin {
                 call.reject(self.ERR_CUSTOM_HANDLER_LOGIN)
             }
         } else {
+            log("entered into else")
             guard let baseUrl = getOverwritableString(call, PARAM_AUTHORIZATION_BASE_URL), !baseUrl.isEmpty else {
                 call.reject(self.ERR_PARAM_NO_AUTHORIZATION_BASE_URL)
                 return
             }
+            log("baseURL is:-"+baseUrl)
             
             // Sign in with Apple
             if baseUrl.contains("appleid.apple.com"), #available(iOS 13.0, *) {
                 self.handleSignInWithApple(call)
             } else {
+                log("not sign in with apple id:-")
                 guard let responseType = getOverwritableString(call, PARAM_RESPONSE_TYPE), !responseType.isEmpty else {
                     call.reject(self.ERR_PARAM_NO_RESPONSE_TYPE)
                     return
                 }
+                log("response type is:-"+responseType)
                 
                 guard let redirectUrl = getOverwritableString(call, PARAM_REDIRECT_URL), !redirectUrl.isEmpty else {
                     call.reject(self.ERR_PARAM_NO_REDIRECT_URL)
                     return
                 }
-                
+                log("redirect url type is:-"+redirectUrl)
                 
                 var oauthSwift: OAuth2Swift
+                
+
                 if let accessTokenEndpoint = getOverwritableString(call, PARAM_ACCESS_TOKEN_ENDPOINT), !accessTokenEndpoint.isEmpty {
+                    log("accesstoken endpoint is :-"+accessTokenEndpoint)
                     oauthSwift = OAuth2Swift(
                         consumerKey: appId,
                         consumerSecret: "", // never ever store the app secret on client!
@@ -253,6 +267,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
                         responseType: responseType
                     )
                 } else {
+                    log("no accesstoken endpoint ")
                     oauthSwift = OAuth2Swift(
                         consumerKey: appId,
                         consumerSecret: "", // never ever store the app secret on client!
@@ -277,6 +292,9 @@ public class OAuth2ClientPlugin: CAPPlugin {
                 if pkceEnabled {
                     let pkceCodeVerifier = generateRandom(withLength: 64)
                     let pkceCodeChallenge = pkceCodeVerifier.sha256().base64()
+
+                    let callParameter: [String: Any] = getOverwritable(call, PARAM_ADDITIONAL_RESOURCE_HEADERS) as? [String: Any] ?? [:]
+                    let additionalHeadersDict = buildStringDict(callParameter);
                     
                     oauthSwift.authorize(
                         withCallbackURL: redirectUrl,
@@ -284,7 +302,8 @@ public class OAuth2ClientPlugin: CAPPlugin {
                         state: requestState,
                         codeChallenge: pkceCodeChallenge,
                         codeVerifier: pkceCodeVerifier,
-                        parameters: additionalParameters) { result in
+                        parameters: additionalParameters,
+                        headers:additionalHeadersDict) { result in
                             self.handleAuthorizationResult(result, call, responseType, requestState, logsEnabled, resourceUrl)
                     }
                 } else {
@@ -306,10 +325,12 @@ public class OAuth2ClientPlugin: CAPPlugin {
      * Plugin function to refresh tokens
      */
     @objc func logout(_ call: CAPPluginCall) {
+        self.log("logout function running")
         if let handlerClassName = getString(call, PARAM_CUSTOM_HANDLER_CLASS) {
             if let handlerInstance = self.getOrLoadHandlerInstance(className: handlerClassName) {
                 let success: Bool! = handlerInstance.logout(viewController: (bridge?.viewController!)!, call: call)
                 if success {
+                    self.log("Custom handler logout done")
                     call.resolve();
                 } else {
                     self.log("Custom handler logout failed!")
@@ -322,6 +343,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
         } else {
             if self.oauthSwift != nil {
                 self.oauthSwift = nil
+                self.log("oauthswift cleared")
             }
             call.resolve()
         }
@@ -352,6 +374,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
                 // resource url request headers
                 let callParameter: [String: Any] = getOverwritable(call, PARAM_ADDITIONAL_RESOURCE_HEADERS) as? [String: Any] ?? [:]
                 let additionalHeadersDict = buildStringDict(callParameter);
+                
                 
                 self.oauthSwift!.client.get(resourceUrl!,
                                             headers: additionalHeadersDict) { result in
