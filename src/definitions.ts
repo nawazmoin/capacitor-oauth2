@@ -21,6 +21,10 @@ export interface OAuth2ClientPlugin {
 
 export interface OAuth2RefreshTokenOptions {
     /**
+     * clientSecret required
+     */
+    clientSecret?:string;
+    /**
      * The app id (client id) you get from the oauth provider like Google, Facebook,...
      */
     appId: string;
@@ -39,12 +43,19 @@ export interface OAuth2RefreshTokenOptions {
 }
 
 export interface OAuth2AuthenticateBaseOptions {
+    clientSecret?:string;
+    /**
+     * The client Secret
+     *
+     * required!
+     */
+    appId?: string;
     /**
      * The app id (client id) you get from the oauth provider like Google, Facebook,...
      *
      * required!
      */
-    appId?: string;
+
     /**
      * The base url for retrieving tokens depending on the response type from a OAuth 2 provider. e.g. https://accounts.google.com/o/oauth2/auth
      *
