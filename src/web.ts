@@ -215,7 +215,6 @@ export class OAuth2ClientPluginWeb
                                     }
                                     reject(new Error("ERR_STATES_NOT_MATCH"));
                                     this.closeWindow();
-                                    //
                                 }
                             }
                             // this is no error no else clause required

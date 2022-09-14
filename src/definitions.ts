@@ -25,12 +25,6 @@ export interface OAuth2RefreshTokenOptions {
      */
     appId: string;
     /**
-     * The client secret
-     *
-     * required!
-     */
-    clientSecret: string;
-    /**
      * Url for retrieving the access_token.
      */
     accessTokenEndpoint: string;
@@ -51,12 +45,6 @@ export interface OAuth2AuthenticateBaseOptions {
      * required!
      */
     appId?: string;
-    /**
-     * The client secret
-     *
-     * required!
-     */
-    clientSecret: string;
     /**
      * The base url for retrieving tokens depending on the response type from a OAuth 2 provider. e.g. https://accounts.google.com/o/oauth2/auth
      *
