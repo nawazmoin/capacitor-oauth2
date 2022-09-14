@@ -25,6 +25,12 @@ export interface OAuth2RefreshTokenOptions {
      */
     appId: string;
     /**
+     * The client secret
+     *
+     * required!
+     */
+    clientSecret: string;
+    /**
      * Url for retrieving the access_token.
      */
     accessTokenEndpoint: string;
@@ -45,6 +51,12 @@ export interface OAuth2AuthenticateBaseOptions {
      * required!
      */
     appId?: string;
+    /**
+     * The client secret
+     *
+     * required!
+     */
+    clientSecret: string;
     /**
      * The base url for retrieving tokens depending on the response type from a OAuth 2 provider. e.g. https://accounts.google.com/o/oauth2/auth
      *
@@ -90,7 +102,7 @@ export interface OAuth2AuthenticateBaseOptions {
     /**
      * Additional parameters for the created authorization url
      */
-    additionalParameters?: { [key: string]: string }
+    additionalParameters?: { [key: string]: string };
     /**
      * @since 3.0.0
      */
@@ -104,23 +116,23 @@ export interface OAuth2AuthenticateBaseOptions {
      * Additional headers for resource url request
      * @since 3.0.0
      */
-    additionalResourceHeaders?: { [key: string]: string }
+    additionalResourceHeaders?: { [key: string]: string };
 }
 
-export interface OAuth2AuthenticateOptions extends OAuth2AuthenticateBaseOptions {
-
+export interface OAuth2AuthenticateOptions
+    extends OAuth2AuthenticateBaseOptions {
     /**
      * Custom options for the platform "web"
      */
-    web?: WebOption,
+    web?: WebOption;
     /**
      * Custom options for the platform "android"
      */
-    android?: AndroidOptions,
+    android?: AndroidOptions;
     /**
      * Custom options for the platform "ios"
      */
-    ios?: IosOptions
+    ios?: IosOptions;
 }
 
 export interface WebOption extends OAuth2AuthenticateBaseOptions {
@@ -163,7 +175,7 @@ export interface IosOptions extends OAuth2AuthenticateBaseOptions {
      *
      * If false scope is set to email and fullName.
      */
-    siwaUseScope?: boolean
+    siwaUseScope?: boolean;
     /**
      * Some oauth provider especially Facebook forces us to use their SDK for apps.
      *
