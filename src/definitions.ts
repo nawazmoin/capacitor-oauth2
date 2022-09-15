@@ -31,6 +31,12 @@ export interface OAuth2RefreshTokenOptions {
      */
     clientSecret: string;
     /**
+     *additional resource headers
+     */
+    additionalResourceHeaders?:{
+        [key:string]:string;
+    };
+    /**
      * Url for retrieving the access_token.
      */
     accessTokenEndpoint: string;
