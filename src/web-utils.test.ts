@@ -296,4 +296,3 @@ describe("additional resource headers", () => {
     });
 
 });
-

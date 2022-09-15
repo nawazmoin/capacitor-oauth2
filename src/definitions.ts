@@ -18,24 +18,11 @@ export interface OAuth2ClientPlugin {
      */
     logout(options: OAuth2AuthenticateOptions): Promise<boolean>;
 }
-
 export interface OAuth2RefreshTokenOptions {
     /**
      * The app id (client id) you get from the oauth provider like Google, Facebook,...
      */
     appId: string;
-    /**
-     * client secret
-     *
-     * required!
-     */
-    clientSecret: string;
-    /**
-     *additional resource headers
-     */
-    additionalResourceHeaders?:{
-        [key:string]:string;
-    };
     /**
      * Url for retrieving the access_token.
      */
@@ -48,21 +35,27 @@ export interface OAuth2RefreshTokenOptions {
      * A space-delimited list of permissions that identify the resources that your application could access on the user's behalf.
      */
     scope?: string;
-}
 
+    clientSecret?: string;
+
+    additionalResourceHeaders?: {
+        [key: string]: string;
+    };
+    
+    additionalParameters?: {
+        [key: string]: string;
+    };
+}
 export interface OAuth2AuthenticateBaseOptions {
     /**
      * The app id (client id) you get from the oauth provider like Google, Facebook,...
      *
      * required!
      */
+
     appId?: string;
-    /**
-     * client secret
-     *
-     * required!
-     */
-    clientSecret: string;
+
+    clientSecret?: string;
     /**
      * The base url for retrieving tokens depending on the response type from a OAuth 2 provider. e.g. https://accounts.google.com/o/oauth2/auth
      *
@@ -108,7 +101,10 @@ export interface OAuth2AuthenticateBaseOptions {
     /**
      * Additional parameters for the created authorization url
      */
-    additionalParameters?: { [key: string]: string };
+
+    additionalParameters?: {
+        [key: string]: string;
+    };
     /**
      * @since 3.0.0
      */
@@ -117,14 +113,14 @@ export interface OAuth2AuthenticateBaseOptions {
      * @since 3.1.0 ... not implemented yet!
      */
     logoutUrl?: string;
-
     /**
      * Additional headers for resource url request
      * @since 3.0.0
      */
-    additionalResourceHeaders?: { [key: string]: string };
+    additionalResourceHeaders?: {
+        [key: string]: string;
+    };
 }
-
 export interface OAuth2AuthenticateOptions
     extends OAuth2AuthenticateBaseOptions {
     /**
@@ -140,7 +136,6 @@ export interface OAuth2AuthenticateOptions
      */
     ios?: IosOptions;
 }
-
 export interface WebOption extends OAuth2AuthenticateBaseOptions {
     /**
      * Options for the window the plugin open for authentication. e.g. width=500,height=600,left=0,top=0
@@ -157,7 +152,6 @@ export interface WebOption extends OAuth2AuthenticateBaseOptions {
      */
     windowReplace?: boolean;
 }
-
 export interface AndroidOptions extends OAuth2AuthenticateBaseOptions {
     /**
      * Some oauth provider especially Facebook forces us to use their SDK for apps.
@@ -174,7 +168,6 @@ export interface AndroidOptions extends OAuth2AuthenticateBaseOptions {
      */
     handleResultOnActivityResult?: boolean;
 }
-
 export interface IosOptions extends OAuth2AuthenticateBaseOptions {
     /**
      * If true the iOS 13+ feature Sign in with Apple (SiWA) try to build the scope from the standard "scope" parameter.
