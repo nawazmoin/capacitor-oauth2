@@ -9,3 +9,4 @@ const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
 
 export * from './definitions';
 export { OAuth2Client };
+

@@ -50,6 +50,7 @@ export interface OAuth2AuthenticateBaseOptions {
      *
      * required!
      */
+
     appId?: string;
 
     clientSecret?:string;
@@ -98,7 +99,7 @@ export interface OAuth2AuthenticateBaseOptions {
     /**
      * Additional parameters for the created authorization url
      */
-    additionalParameters?: { [key: string]: string }
+     additionalParameters?: { [key: string]: string }
     /**
      * @since 3.0.0
      */
@@ -120,15 +121,15 @@ export interface OAuth2AuthenticateOptions extends OAuth2AuthenticateBaseOptions
     /**
      * Custom options for the platform "web"
      */
-    web?: WebOption,
-    /**
-     * Custom options for the platform "android"
-     */
-    android?: AndroidOptions,
-    /**
-     * Custom options for the platform "ios"
-     */
-    ios?: IosOptions
+     web?: WebOption,
+     /**
+      * Custom options for the platform "android"
+      */
+     android?: AndroidOptions,
+     /**
+      * Custom options for the platform "ios"
+      */
+     ios?: IosOptions
 }
 
 export interface WebOption extends OAuth2AuthenticateBaseOptions {
