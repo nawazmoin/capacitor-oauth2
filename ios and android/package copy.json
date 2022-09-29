@@ -1,0 +1,56 @@
+{
+  "name": "mail-app0.2",
+  "private": true,
+  "version": "0.1.1",
+  "description": "A prototyp with stencil, ionic, redux, etc",
+  "license": "MIT",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "start:development": "stencil build --watch --serve --docs",
+    "build": "stencil build",
+    "start": "stencil build --dev --watch --serve",
+    "test": "stencil test --spec --e2e",
+    "test.watch": "stencil test --spec --e2e --watch",
+    "generate": "stencil generate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.mamdev.server.lan/fwoerz/mail-stencil-ionic.git"
+  },
+  "devDependencies": {
+    "@ionic/core": "^6.1.2",
+    "@stencil/core": "^2.17.1",
+    "@types/jest": "^27.5.0",
+    "ionicons": "^5.4.0",
+    "jest": "^27.5.1",
+    "jest-cli": "^27.5.1",
+    "puppeteer": "^13.1.3",
+    "rollup": "^2.71.1",
+    "stencil-inline-svg": "^1.1.0",
+    "type-fest": "^2.11.2",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@byteowls/capacitor-oauth2": "git+https://github.com/nawazmoin/capacitor-oauth2.git#newrelease",
+    "@capacitor/android": "^3.5.1",
+    "@capacitor/cli": "^3.5.1",
+    "@capacitor/core": "^3.5.1",
+    "@capacitor/ios": "^3.5.1",
+    "@ionic/core": "^6.1.3",
+    "@mamdev/fd.api-clients.mail": "file:mamdev-fd.api-clients.mail-9.2.1.tgz",
+    "@mamdev/fd.libs.chimera.chimera-web": "^0.2.0",
+    "@mamdev/fd.libs.oauth2-client": "file:mamdev-fd.libs.oauth2-client-4.6.0.tgz",
+    "@mamdev/fd.utils.cdn-static-server": "^1.0.0",
+    "@mamdev/fd.utils.mam-constants": "^1.1.0",
+    "@mamdev/webmailer.blocks.mail-list-components": "file:mamdev-webmailer.blocks.mail-list-components-8.1.1.tgz",
+    "deepmerge": "^4.2.2",
+    "ionicons": "^6.0.1",
+    "laboratory_project": "file:laboratory_project-0.0.1.tgz",
+    "lodash-es": "^4.17.21",
+    "lodash.product": "^18.9.19",
+    "merge-anything": "^5.0.2",
+    "vanilla-router": "^1.2.8"
+  }
+}

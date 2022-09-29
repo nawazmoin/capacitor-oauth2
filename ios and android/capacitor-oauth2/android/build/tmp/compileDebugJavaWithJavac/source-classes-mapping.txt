@@ -1,0 +1,21 @@
+com/byteowls/capacitor/oauth2/ConfigUtils.java
+ com.byteowls.capacitor.oauth2.ConfigUtils
+com/byteowls/capacitor/oauth2/ResourceCallResult.java
+ com.byteowls.capacitor.oauth2.ResourceCallResult
+com/byteowls/capacitor/oauth2/handler/OAuth2CustomHandler.java
+ com.byteowls.capacitor.oauth2.handler.OAuth2CustomHandler
+com/byteowls/capacitor/oauth2/ResourceUrlAsyncTask.java
+ com.byteowls.capacitor.oauth2.ResourceUrlAsyncTask
+com/byteowls/capacitor/oauth2/OAuth2RefreshTokenOptions.java
+ com.byteowls.capacitor.oauth2.OAuth2RefreshTokenOptions
+com/byteowls/capacitor/oauth2/OAuth2ClientPlugin.java
+ com.byteowls.capacitor.oauth2.OAuth2ClientPlugin
+ com.byteowls.capacitor.oauth2.OAuth2ClientPlugin$1
+com/byteowls/capacitor/oauth2/BuildConfig.java
+ com.byteowls.capacitor.oauth2.BuildConfig
+com/byteowls/capacitor/oauth2/handler/AccessTokenCallback.java
+ com.byteowls.capacitor.oauth2.handler.AccessTokenCallback
+com/byteowls/capacitor/oauth2/OAuth2Utils.java
+ com.byteowls.capacitor.oauth2.OAuth2Utils
+com/byteowls/capacitor/oauth2/OAuth2Options.java
+ com.byteowls.capacitor.oauth2.OAuth2Options

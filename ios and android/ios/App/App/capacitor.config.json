@@ -1,0 +1,7 @@
+{
+	"appId": "com.example.mailapp",
+	"appName": "mail-app0.2",
+	"webDir": "dist/www",
+	"bundledWebRuntime": false,
+	"server": {}
+}
