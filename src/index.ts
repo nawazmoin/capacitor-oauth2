@@ -21,12 +21,10 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
         storeProcessByKey(registryKey, process);
 
         let payload: AccessTokenPayload;
-        try{
+    
             payload = await process;
             return payload.access_token;
-        }catch(e){
-            return Promise.reject(e);
-        }
+
     }
 
     const responsePayload: AccessTokenPayload = await process;
@@ -37,13 +35,10 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
 
 async function createNewProcess(settings: OAuth2AuthenticateOptions) {
 
-    try{
         const response = await OAuth2Client.authenticate(settings);
         let accessToken = response['access_token_response']['access_token']
         return { access_token:accessToken }
-    }catch(e){
-        throw new Error("An Error Occured")
-    }
+    
 }
 
 

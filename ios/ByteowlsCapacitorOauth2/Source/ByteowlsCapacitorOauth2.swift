@@ -304,8 +304,12 @@ public class OAuth2ClientPlugin: CAPPlugin {
                         codeVerifier: pkceCodeVerifier,
                         parameters: additionalParameters,
                         headers:additionalHeadersDict) { result in
-                            self.handleAuthorizationResult(result, call, responseType, requestState, logsEnabled, resourceUrl)
+                            self.handleAuthorizationResult(result, call, responseType, requestState, logsEnabled, resourceUrl)                        
                     }
+                    log("********result is:-*********"+redirectUrl)
+                    log("********response type is:-*********"+responseType)
+                    log("********requestState is:-*********"+requestState)
+                    
                 } else {
                     oauthSwift.authorize(
                         withCallbackURL: redirectUrl,
@@ -314,6 +318,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
                         parameters: additionalParameters) { result in
                             self.handleAuthorizationResult(result, call, responseType, requestState, logsEnabled, resourceUrl)
                     }
+
                 }
             }
             
@@ -378,6 +383,7 @@ public class OAuth2ClientPlugin: CAPPlugin {
                 
                 self.oauthSwift!.client.get(resourceUrl!,
                                             headers: additionalHeadersDict) { result in
+                        log("*****result url: \(resourceUrl!)")
                         switch result {
                         case .success(let resourceResponse):
                             do {
