@@ -1,3 +1,23 @@
+export interface AccessTokenPayload {
+    access_token: string;
+}
+
+export interface GetProcessByKey {
+    (key: string): Promise<AccessTokenPayload>;
+};
+
+export interface DeleteProcessByKey {
+    (key: string): void;
+};
+
+export interface StoreProcessByKey {
+    (key: string, process: Promise<AccessTokenPayload>): void;
+};
+
+export interface CreateIdentifier {
+    (settings: OAuth2AuthenticateOptions): string;
+};
+
 export interface OAuth2ClientPlugin {
     /**
      * Authenticate against a OAuth 2 provider.

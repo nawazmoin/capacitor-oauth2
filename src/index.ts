@@ -1,6 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
-import {getProcessByKey, storeProcessByKey, createIdentifier, AccessTokenPayload} from './process-registry'
-import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin } from './definitions';
+import {getProcessByKey, storeProcessByKey, createIdentifier} from './process-registry';
+import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin , AccessTokenPayload } from './definitions';
 
 const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
     web: () => import('./web').then(m => new m.OAuth2ClientPluginWeb()),
@@ -8,7 +8,7 @@ const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
 });
 
 
-const getAccessTokenNative=async (settings:OAuth2AuthenticateOptions)=>{
+const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
 
     const registryKey = createIdentifier(settings);
 
@@ -49,6 +49,5 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
 
 
 export * from './definitions';
-export { OAuth2Client , getAccessTokenNative};
-
+export { OAuth2Client, getAccessTokenNative };
 
