@@ -1,5 +1,5 @@
 import { registerPlugin } from '@capacitor/core';
-import {getProcessByKey, storeProcessByKey, createIdentifier} from './process-registry';
+import {getProcessByKey, storeProcessByKey, createIdentifier, deleteProcessByKey} from './process-registry';
 import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin , AccessTokenPayload } from './definitions';
 
 const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
@@ -28,6 +28,9 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
     }
 
     const responsePayload: AccessTokenPayload = await process;
+
+    deleteProcessByKey(registryKey);
+
     return Promise.resolve(responsePayload.access_token);
 
     
