@@ -383,7 +383,6 @@ public class OAuth2ClientPlugin: CAPPlugin {
                 
                 self.oauthSwift!.client.get(resourceUrl!,
                                             headers: additionalHeadersDict) { result in
-                        log("*****result url: \(resourceUrl!)")
                         switch result {
                         case .success(let resourceResponse):
                             do {
