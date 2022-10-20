@@ -1,5 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import {getProcessByKey, storeProcessByKey, createIdentifier, deleteProcessByKey} from './process-registry';
+import { inMemoryTokenCache} from './in-memory-token-cache';
 import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin , AccessTokenPayload } from './definitions';
 
 const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
@@ -8,9 +9,19 @@ const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
 });
 
 
-const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
+const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefresh?:boolean)=>{
 
     const registryKey = createIdentifier(settings);
+
+    if (forceRefresh === true) {
+        inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
+    }
+    else {
+        const token = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
+        if (token != null) {
+          return token;
+        }
+      }
 
     let process = getProcessByKey(registryKey);
 
@@ -22,8 +33,9 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
 
         let payload: AccessTokenPayload;
     
-            payload = await process;
-            return payload.access_token;
+        payload = await process;
+        
+        inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload);
 
     }
 
@@ -32,16 +44,17 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions)=>{
     deleteProcessByKey(registryKey);
 
     return Promise.resolve(responsePayload.access_token);
-
-    
 }
+
+
+
+
 
 async function createNewProcess(settings: OAuth2AuthenticateOptions) {
 
         const response = await OAuth2Client.authenticate(settings);
         let accessToken = response['access_token_response']['access_token']
         return { access_token:accessToken }
-    
 }
 
 
