@@ -246,7 +246,7 @@ public class OAuth2ClientPlugin extends Plugin {
                 builder.setState(oauth2Options.getState());
             }
             builder.setScope(oauth2Options.getScope());
-            if (oauth2Options.isPkceEnabl ed()) {
+            if (oauth2Options.isPkceEnabled()) {
                 builder.setCodeVerifier(oauth2Options.getPkceCodeVerifier());
             } else {
                 builder.setCodeVerifier(null);
