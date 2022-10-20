@@ -17,9 +17,9 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
         inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
     }
     else {
-        const token = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
-        if (token != null) {
-          return token;
+        const tokenPayload = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
+        if (tokenPayload != null) {
+          return tokenPayload.access_token;
         }
       }
 
