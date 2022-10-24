@@ -1,7 +1,8 @@
 import { registerPlugin } from '@capacitor/core';
 import {getProcessByKey, storeProcessByKey, createIdentifier, deleteProcessByKey} from './process-registry';
-import { inMemoryTokenCache} from './in-memory-token-cache';
+// import { inMemoryTokenCache} from './in-memory-token-cache';
 import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin , AccessTokenPayload } from './definitions';
+import { Preferences } from '@capacitor/preferences';
 
 const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
     web: () => import('./web').then(m => new m.OAuth2ClientPluginWeb()),
@@ -14,10 +15,13 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
     const registryKey = createIdentifier(settings);
 
     if (forceRefresh === true) {
-        inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
+        await Preferences.remove({key:'access_token_payload'})
+        // inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
     }
     else {
-        const tokenPayload = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
+        const { value } = await Preferences.get({ key:'access_token_payload' })
+        const tokenPayload = JSON.parse(value || '{}');
+        // const tokenPayload = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
         if (tokenPayload != null) {
           return tokenPayload.access_token;
         }
@@ -35,7 +39,9 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
     
         payload = await process;
         
-        inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload);
+        await Preferences.set({key:'access_token_payload',value:JSON.stringify(payload)})
+
+        // inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload);
 
     }
 
@@ -45,10 +51,6 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
 
     return Promise.resolve(responsePayload.access_token);
 }
-
-
-
-
 
 async function createNewProcess(settings: OAuth2AuthenticateOptions) {
 
