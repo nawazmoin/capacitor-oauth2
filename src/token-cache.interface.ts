@@ -4,3 +4,10 @@ import type {  AccessTokenPayload } from './definitions';
   getTokenPayloadFromCache: (cacheKey: string) => AccessTokenPayload;
   saveTokenPayloadToCache: (cacheKey: string, token: AccessTokenPayload, ttl?: number) => void;
 }
+
+
+export interface refreshTokenCache {
+  removeRefreshTokenFromCache: (cacheKey: string) => void;
+  getRefreshTokenFromCache: (cacheKey: string) => string;
+  saveRefreshTokenToCache: (cacheKey: string, token: string, ttl?: number) => void;
+}
