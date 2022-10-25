@@ -1,8 +1,8 @@
-import { TokenCache, refreshTokenCache } from './token-cache.interface';
-import type {  AccessTokenPayload } from './definitions';
+import { RefreshTokenCache, TokenCache } from './token-cache.interface';
+// import type {  AccessTokenPayload } from './definitions';
 
 interface InMemoryTokenCache {
-  [cacheKey: string]: AccessTokenPayload;
+  [cacheKey: string]: string;
 }
 
 /**
@@ -15,35 +15,32 @@ export const inMemoryTokenCache: TokenCache = {
         delete tokenCache[cacheKey];
   },
 
-  getTokenPayloadFromCache(cacheKey: string): AccessTokenPayload {
+  getTokenPayloadFromCache(cacheKey: string): string {
     return tokenCache[cacheKey];
   },
 
-  saveTokenPayloadToCache(cacheKey: string, token: AccessTokenPayload): void {
+  saveTokenPayloadToCache(cacheKey: string, token: string): void {
     tokenCache[cacheKey] = token;
   },
 };
 
-
+//for refresh token caching
 interface InMemoryRefreshTokenCache {
   [cacheKey: string]: string;
 }
 
-/**
- * The actual token cache
- */
 const refreshTokenCache: InMemoryRefreshTokenCache = {};
 
-export const inMemoryRefreshTokenCache: refreshTokenCache = {
-  removeRefreshTokenFromCache(cacheKey: string): void {
-        delete refreshTokenCache[cacheKey];
+export const inMemoryRefreshTokenCache: RefreshTokenCache = {
+  removeRefreshTokenPayloadFromCache(cacheKey: string): void {
+        delete tokenCache[cacheKey];
   },
 
-  getRefreshTokenFromCache(cacheKey: string): string {
+  getRefreshTokenPayloadFromCache(cacheKey: string): string {
     return refreshTokenCache[cacheKey];
   },
 
-  saveRefreshTokenToCache(cacheKey: string, token: string): void {
+  saveRefreshTokenPayloadToCache(cacheKey: string, token: string): void {
     refreshTokenCache[cacheKey] = token;
   },
 };

@@ -1,30 +1,7 @@
 export interface AccessTokenPayload {
-      /**
-   * The accessToken is the token used by the client in order to authenticate with other backendServices
-   */
-  access_token: string;
-
-  /**
-   * The refreshToken should never be send in this scenario
-   * @deprecated
-   */
-  refresh_token: string;
-
-  /**
-   * The scope(s) which are attached to the accessToken
-   */
-  scope: string;
-
-  /**
-   * The tokenType for the token, which in our case should always be 'Bearer',
-   * which has to be the prefix for the accessToken within the Authorization-Header for service requests
-   */
-  token_type: string;
-
-  /**
-   * The expiry time in seconds, until the token will be invalid
-   */
-  expires_in: number;
+    access_token: string;
+    refresh_token: string;
+    expires_at: number;
 }
 
 

@@ -1,13 +1,11 @@
-import type {  AccessTokenPayload } from './definitions';
- export interface TokenCache {
+// import type {  AccessTokenPayload } from './definitions';
+export interface TokenCache {
   removeTokenPayloadFromCache: (cacheKey: string) => void;
-  getTokenPayloadFromCache: (cacheKey: string) => AccessTokenPayload;
-  saveTokenPayloadToCache: (cacheKey: string, token: AccessTokenPayload, ttl?: number) => void;
+  getTokenPayloadFromCache: (cacheKey: string) => string;
+  saveTokenPayloadToCache: (cacheKey: string, token: string, ttl?: number) => void;
 }
-
-
-export interface refreshTokenCache {
-  removeRefreshTokenFromCache: (cacheKey: string) => void;
-  getRefreshTokenFromCache: (cacheKey: string) => string;
-  saveRefreshTokenToCache: (cacheKey: string, token: string, ttl?: number) => void;
+export interface RefreshTokenCache {
+  removeRefreshTokenPayloadFromCache: (cacheKey: string) => void;
+  getRefreshTokenPayloadFromCache: (cacheKey: string) => string;
+  saveRefreshTokenPayloadToCache: (cacheKey: string, token: string, ttl?: number) => void;
 }
