@@ -1,8 +1,8 @@
 import { registerPlugin } from '@capacitor/core';
 import {getProcessByKey, storeProcessByKey, createIdentifier, deleteProcessByKey} from './process-registry';
-import { inMemoryTokenCache} from './in-memory-token-cache';
+// import { inMemoryTokenCache} from './in-memory-token-cache';
 import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin , AccessTokenPayload, OAuth2RefreshTokenOptions } from './definitions';
-import { setRefreshToken, getRefreshToken, removeRefreshToken } from './capacitor-storage-cache';
+import { setToSecureStorage, getFromSecureStorage, removeFromSecureStorage } from './capacitor-storage-cache';
 
 const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
     web: () => import('./web').then(m => new m.OAuth2ClientPluginWeb()),
@@ -16,13 +16,21 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
     const registryKey = createIdentifier(settings);
 
     if (forceRefresh === true) {
-        inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
+        await removeFromSecureStorage("access_token");
+        // inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
     }
     else {
-        const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
-        if (tokenFromCache != null) {
-          return tokenFromCache;
+        try{
+            const tokenFromCache = await getFromSecureStorage("access_token");
+            // const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
+            if (tokenFromCache != null) {
+                return tokenFromCache;
+            }
         }
+        catch(e){
+
+        }
+         
       }
 
     let process = getProcessByKey(registryKey);
@@ -38,11 +46,12 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
     
         payload = await process;
 
-        inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload.access_token);
+        await setToSecureStorage(payload.access_token,"access_token")
+        // inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload.access_token);
 
         if(payload.refresh_token){
-            await setRefreshToken(payload.refresh_token);
-            console.log("refresh token set in the secure storage ", await getRefreshToken());
+            await setToSecureStorage(payload.refresh_token,"refresh_token");
+            console.log("refresh token set in the secure storage ", await getFromSecureStorage("refresh_token"));
             // inMemoryRefreshTokenCache.saveRefreshTokenPayloadToCache(registryKey, payload.refresh_token)
         }
 
@@ -74,7 +83,7 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
     // const refreshTokenFromCache = inMemoryRefreshTokenCache.getRefreshTokenPayloadFromCache(registryKey);
 
     try{
-        const refreshTokenFromCache = await getRefreshToken();
+        const refreshTokenFromCache = await getFromSecureStorage("refresh_token");
         if(refreshTokenFromCache){
             console.log("refresh token from cache is ",refreshTokenFromCache);
             try {
@@ -117,8 +126,9 @@ async function getAccessTokenFromRefreshToken(settings:OAuth2AuthenticateOptions
         }
         return response;
     } catch(e){
-        await removeRefreshToken();
-        getAccessTokenNative(settings,true)
+        await removeFromSecureStorage("refresh_token");
+        throw e;
+        // getAccessTokenNative(settings,true)
     }
 }
 
