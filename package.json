@@ -51,12 +51,16 @@
         "access": "public"
     },
     "peerDependencies": {
-        "@capacitor/core": "^3.0.0"
+        "@capacitor/android": "^4.4.0",
+        "@capacitor/core": "^4.4.0",
+        "@capacitor/ios": "^4.4.0",
+        "@capacitor/preferences": "^4.0.1"
     },
     "devDependencies": {
-        "@capacitor/android": "3.0.2",
-        "@capacitor/core": "3.0.2",
-        "@capacitor/ios": "3.0.2",
+        "@capacitor/android": "^4.4.0",
+        "@capacitor/core": "^4.4.0",
+        "@capacitor/ios": "^4.4.0",
+        "@capacitor/preferences": "^4.0.1",
         "@types/jest": "26.0.24",
         "eslint": "7.32.0",
         "jest": "27.0.6",
@@ -65,6 +69,6 @@
         "typescript": "4.1.5"
     },
     "dependencies": {
-        "@capacitor/storage": "^1.2.5"
+        "capacitor-secure-storage-plugin": "^0.8.0"
     }
 }

@@ -134,7 +134,7 @@ public class OAuth2ClientPlugin extends Plugin {
                 .setRefreshToken(oAuth2RefreshTokenOptions.getRefreshToken())
                 .build();
 
-        this.authService.performTokenRequest(tokenRequest, new ClientSecretBasic(oauth2Options.getClientSecret()), (response1, ex) -> {
+        this.authService.performTokenRequest(tokenRequest, new ClientSecretBasic(oAuth2RefreshTokenOptions.getClientSecret()), (response1, ex) -> {
             this.authState.update(response1, ex);
             if (ex != null) {
                 call.reject(ERR_GENERAL, ex);
@@ -510,6 +510,8 @@ public class OAuth2ClientPlugin extends Plugin {
 
     OAuth2RefreshTokenOptions buildRefreshTokenOptions(JSObject callData) {
         OAuth2RefreshTokenOptions o = new OAuth2RefreshTokenOptions();
+        o.setClientSecret(
+            ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_CLIENT_SECRET)));
         o.setAppId(
                 ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_APP_ID)));
         o.setAccessTokenEndpoint(ConfigUtils.trimToNull(
