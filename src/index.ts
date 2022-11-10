@@ -10,28 +10,41 @@ const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
 });
 
 
-const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefresh?:boolean)=>{
-
+const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefresh?:boolean)=>{
+    const settings = _settings;
 
     const registryKey = createIdentifier(settings);
 
     if (forceRefresh === true) {
+        console.log("force refresh is true, removing access token from cache");
+        
         await removeFromSecureStorage("access_token");
         // inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
     }
     else {
         try{
-            const tokenFromCache = await getFromSecureStorage("access_token");
-            // const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
-            if (tokenFromCache != null) {
-                return tokenFromCache;
-            }
-        }
-        catch(e){
+            const expires_at = await getFromSecureStorage("expires_at");
 
+            console.log("access token expires in",Number(expires_at)-Date.now());
+            if(Number(expires_at)-Date.now()>0){
+                console.log("access_token has not expired, getting it from cache")
+                const tokenFromCache = await getFromSecureStorage("access_token");
+                console.log("access token from cache is",tokenFromCache);
+                // const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
+                if (tokenFromCache) {
+                    return tokenFromCache;
+                }
+                else{
+                    console.log("no access token in storage")
+                }
+            }
+        }catch(e){
+            //do nothing here
         }
-         
-      }
+            
+    }
+
+    console.log("going to start new process now");
 
     let process = getProcessByKey(registryKey);
 
@@ -47,6 +60,7 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
         payload = await process;
 
         await setToSecureStorage(payload.access_token,"access_token")
+        await setToSecureStorage((payload.expires_at)+'',"expires_at");
         // inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload.access_token);
 
         if(payload.refresh_token){
@@ -60,6 +74,7 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
         // },payload.expires_in*1000)
 
         setTimeout(async ()=>{
+            // await removeFromSecureStorage("access_token");
             getAccessTokenNative(settings,true);
         },(payload.expires_at-Date.now()))
 
@@ -70,7 +85,8 @@ const getAccessTokenNative = async(settings:OAuth2AuthenticateOptions,forceRefre
     deleteProcessByKey(registryKey);
 
     console.log("access token from GATN ",responsePayload.access_token)
-    return Promise.resolve(responsePayload.access_token);
+
+    return responsePayload.access_token;
 }
 
 
@@ -83,6 +99,7 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
     // const refreshTokenFromCache = inMemoryRefreshTokenCache.getRefreshTokenPayloadFromCache(registryKey);
 
     try{
+        console.log("trying to get refresh token from storage");
         const refreshTokenFromCache = await getFromSecureStorage("refresh_token");
         if(refreshTokenFromCache){
             console.log("refresh token from cache is ",refreshTokenFromCache);
@@ -102,6 +119,7 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
                 }
              }
         }
+        console.log("no refresh token found in storage")
     }catch(e){
         //do nothing here
     }
