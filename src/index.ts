@@ -23,25 +23,23 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
     }
     else {
         try{
-            const expires_at = await getFromSecureStorage("expires_at");
+            const tokenFromCache = await getFromSecureStorage("access_token");
+            if(tokenFromCache){
+                const expires_at = await getFromSecureStorage("expires_at");
+                console.log("found an access token in the secure storage, access token expires in",Number(expires_at)-Date.now());
 
-            console.log("access token expires in",Number(expires_at)-Date.now());
-            if(Number(expires_at)-Date.now()>0){
-                console.log("access_token has not expired, getting it from cache")
-                const tokenFromCache = await getFromSecureStorage("access_token");
-                console.log("access token from cache is",tokenFromCache);
-                // const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
-                if (tokenFromCache) {
+                if(Number(expires_at)-Date.now()>0){
+                    console.log("as access_token has not expired, getting it from cache ",tokenFromCache);
+                    // const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
                     return tokenFromCache;
                 }
-                else{
-                    console.log("no access token in storage")
-                }
+            }
+            else{
+                console.log("there is currently no access token in the secure storage, going to check for refresh token");
             }
         }catch(e){
             //do nothing here
         }
-            
     }
 
     console.log("going to start new process now");
@@ -76,7 +74,7 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
         setTimeout(async ()=>{
             // await removeFromSecureStorage("access_token");
             getAccessTokenNative(settings,true);
-        },(payload.expires_at-Date.now()))
+        },3000)
 
     }
 
@@ -84,12 +82,12 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
 
     deleteProcessByKey(registryKey);
 
-    console.log("access token from GATN ",responsePayload.access_token)
+    console.log("expires_at from GATN - ",responsePayload.expires_at)
+
+    console.log("refresh token from GATN - ",responsePayload.refresh_token)
 
     return responsePayload.access_token;
 }
-
-
 
 
 
@@ -104,8 +102,8 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
         if(refreshTokenFromCache){
             console.log("refresh token from cache is ",refreshTokenFromCache);
             try {
-                // let accessTokenPayload = await getAccessTokenFromRefreshToken(settings,refreshTokenFromCache);
                 let accessTokenPayload = await getAccessTokenFromRefreshToken(settings,refreshTokenFromCache);
+                // let accessTokenPayload = await getAccessTokenFromRefreshToken(settings);
                 return accessTokenPayload;
             } catch (e) {
                 if(e instanceof Error){
@@ -121,17 +119,17 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
         }
         console.log("no refresh token found in storage")
     }catch(e){
-        //do nothing here
+        // do nothing here
     }
 
     const response = await OAuth2Client.authenticate(settings);
     return response['access_token_response']
 }
 
-async function getAccessTokenFromRefreshToken(settings:OAuth2AuthenticateOptions,refreshTokenFromCache: string) {
+async function getAccessTokenFromRefreshToken(settings:OAuth2AuthenticateOptions, refreshTokenFromCache:string) {
     console.log("going to send a request to fetch access token with refresh token, please verify these settings:-");
     console.log("appId:-",settings.appId);
-    console.log("accessTokenEndpoint:-",settings.accessTokenEndpoint);
+    console.log("accessTokenEndpoint:-",settings.accessTokenEndpoint); 
     console.log("refreshToken:-",refreshTokenFromCache);
     console.log("scope:-",settings.scope);
     console.log("clientSecret:-",settings.clientSecret);
