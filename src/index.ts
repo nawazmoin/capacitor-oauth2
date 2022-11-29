@@ -27,6 +27,8 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
             if(tokenFromCache){
                 const expires_at = await getFromSecureStorage("expires_at");
                 console.log("found an access token in the secure storage, access token expires in",Number(expires_at)-Date.now());
+                console.log("access token expires in:= ",Number(expires_at)-Date.now()>0)
+
 
                 if(Number(expires_at)-Date.now()>0){
                     console.log("as access_token has not expired, getting it from cache ",tokenFromCache);
@@ -42,7 +44,7 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
         }
     }
 
-    console.log("going to start new process now");
+    
 
     let process = getProcessByKey(registryKey);
 
@@ -61,11 +63,11 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
         await setToSecureStorage((payload.expires_at)+'',"expires_at");
         // inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload.access_token);
 
-        if(payload.refresh_token){
-            await setToSecureStorage(payload.refresh_token,"refresh_token");
-            console.log("refresh token set in the secure storage ", await getFromSecureStorage("refresh_token"));
+        // if(payload.refresh_token){
+            // await setToSecureStorage(payload.refresh_token,"refresh_token");
+            // console.log("refresh token set in the secure storage ", await getFromSecureStorage("refresh_token"));
             // inMemoryRefreshTokenCache.saveRefreshTokenPayloadToCache(registryKey, payload.refresh_token)
-        }
+        // }
 
         // setTimeout(async ()=>{
         //     getAccessTokenNative(settings,true);
@@ -74,7 +76,7 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
         setTimeout(async ()=>{
             // await removeFromSecureStorage("access_token");
             getAccessTokenNative(settings,true);
-        },3000)
+        },(payload.expires_at-Date.now()))
 
     }
 
@@ -97,13 +99,13 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
     // const refreshTokenFromCache = inMemoryRefreshTokenCache.getRefreshTokenPayloadFromCache(registryKey);
 
     try{
-        console.log("trying to get refresh token from storage");
-        const refreshTokenFromCache = await getFromSecureStorage("refresh_token");
-        if(refreshTokenFromCache){
-            console.log("refresh token from cache is ",refreshTokenFromCache);
+        // console.log("trying to get refresh token from storage");
+        // const refreshTokenFromCache = await getFromSecureStorage("refresh_token");
+        // if(refreshTokenFromCache){
+        //     console.log("refresh token from cache is ",refreshTokenFromCache);
             try {
-                let accessTokenPayload = await getAccessTokenFromRefreshToken(settings,refreshTokenFromCache);
-                // let accessTokenPayload = await getAccessTokenFromRefreshToken(settings);
+                // let accessTokenPayload = await getAccessTokenFromRefreshToken(settings,refreshTokenFromCache);
+                let accessTokenPayload = await getAccessTokenFromRefreshToken(settings);
                 return accessTokenPayload;
             } catch (e) {
                 if(e instanceof Error){
@@ -116,7 +118,7 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
                     }
                 }
              }
-        }
+        // }
         console.log("no refresh token found in storage")
     }catch(e){
         // do nothing here
@@ -126,23 +128,22 @@ async function createNewProcess(settings: OAuth2AuthenticateOptions) {
     return response['access_token_response']
 }
 
-async function getAccessTokenFromRefreshToken(settings:OAuth2AuthenticateOptions, refreshTokenFromCache:string) {
+async function getAccessTokenFromRefreshToken(settings:OAuth2AuthenticateOptions) {
     console.log("going to send a request to fetch access token with refresh token, please verify these settings:-");
     console.log("appId:-",settings.appId);
-    console.log("accessTokenEndpoint:-",settings.accessTokenEndpoint); 
-    console.log("refreshToken:-",refreshTokenFromCache);
+    console.log("accessTokenEndpoint:-",settings.accessTokenEndpoint);
     console.log("scope:-",settings.scope);
     console.log("clientSecret:-",settings.clientSecret);
     console.log("additionalResourceHeaders:-",settings.additionalResourceHeaders);
 
     try{
-        const response = await OAuth2Client.refreshToken({...settings,refreshToken:refreshTokenFromCache} as OAuth2RefreshTokenOptions)
+        const response = await OAuth2Client.refreshToken({...settings} as OAuth2RefreshTokenOptions)
         if (!response['access_token']) {
             throw new Error('Failure Response');
         }
         return response;
     } catch(e){
-        await removeFromSecureStorage("refresh_token");
+        // await removeFromSecureStorage("refresh_token");
         throw e;
         // getAccessTokenNative(settings,true)
     }

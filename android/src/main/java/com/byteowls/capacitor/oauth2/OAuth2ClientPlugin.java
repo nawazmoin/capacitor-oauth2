@@ -121,20 +121,22 @@ public class OAuth2ClientPlugin extends Plugin {
             return;
         }
 
-       if (oAuth2RefreshTokenOptions.getRefreshToken() == null) {
-           call.reject(ERR_PARAM_NO_REFRESH_TOKEN);
-           return;
-       }
+//        if (oAuth2RefreshTokenOptions.getRefreshToken() == null) {
+//            call.reject(ERR_PARAM_NO_REFRESH_TOKEN);
+//            return;
+//        }
       //Added by Moin
       //checking if there is refresh token in the secure storage
-    //   SharedPreferences sharedPreferences = getContext().getSharedPreferences("SharedPref", MODE_PRIVATE);
-    //   SharedPreferences.Editor myEdit = sharedPreferences.edit();
-    //   String refresh_token = sharedPreferences.getString("refresh_token", "");
+      SharedPreferences sharedPreferences = getContext().getSharedPreferences("SharedPref", MODE_PRIVATE);
+      SharedPreferences.Editor myEdit = sharedPreferences.edit();
+      String refresh_token = sharedPreferences.getString("refresh_token","");
 
-    //     if(refresh_token == null || refresh_token==""){
-    //       call.reject(ERR_PARAM_NO_REFRESH_TOKEN_IN_SECURE_STORAGE);
-    //         return;
-    //     }
+      System.out.println("refresh token from storage i.e refreshtoken function" + refresh_token);
+
+        if(refresh_token == null || refresh_token==""){
+          call.reject(ERR_PARAM_NO_REFRESH_TOKEN_IN_SECURE_STORAGE);
+            return;
+        }
 
         this.authService = new AuthorizationService(getContext());
 
@@ -150,34 +152,39 @@ public class OAuth2ClientPlugin extends Plugin {
                 config,
                 oAuth2RefreshTokenOptions.getAppId()).setGrantType(GrantTypeValues.REFRESH_TOKEN)
                 .setScope(oAuth2RefreshTokenOptions.getScope())
-               .setRefreshToken(oAuth2RefreshTokenOptions.getRefreshToken())
+//                .setRefreshToken(oAuth2RefreshTokenOptions.getRefreshToken())
                 //Added by Moin
-                // .setRefreshToken(refresh_token)
+                .setRefreshToken(refresh_token)
                 .build();
 
-
-        this.authService.performTokenRequest(tokenRequest, new ClientSecretBasic(oAuth2RefreshTokenOptions.getClientSecret()), (response1, ex) -> {
-            this.authState.update(response1, ex);
-            if (ex != null) {
-                call.reject(ERR_GENERAL, ex);
-            } else {
-                if (response1 != null) {
-                    try {
-                        JSObject json = new JSObject(response1.jsonSerializeString());
-                        call.resolve(json);
-                    } catch (JSONException e) {
-                        call.reject(ERR_GENERAL, e);
-                    }
-
-                } else {
-                    call.reject(ERR_NO_ACCESS_TOKEN);
-                }
+      this.authService.performTokenRequest(tokenRequest, new ClientSecretBasic(oAuth2RefreshTokenOptions.getClientSecret()), (response1, ex) -> {
+        this.authState.update(response1, ex);
+        if (ex != null) {
+          if(ex.error.equals("invalid_grant")){
+            System.out.println("refresh token has expired, deleting it from cache");
+            myEdit.remove("refresh_token").commit();
+          }
+          call.reject(ERR_GENERAL, ex);
+        } else {
+          if (response1 != null) {
+            Log.i(getLogTag(), "refreshtoken response :\n" + response1.jsonSerializeString());
+            try {
+              JSObject json = new JSObject(response1.jsonSerializeString());
+              call.resolve(json);
+            } catch (JSONException e) {
+              call.reject(ERR_GENERAL, e);
             }
-        });
+
+          } else {
+            call.reject(ERR_NO_ACCESS_TOKEN);
+          }
+        }
+      });
     }
 
     @PluginMethod()
     public void authenticate(final PluginCall call) {
+
         System.out.println("entered authenticate from android");
         this.callbackId = call.getCallbackId();
         disposeAuthService();
@@ -411,6 +418,7 @@ public class OAuth2ClientPlugin extends Plugin {
                         tokenExchangeRequest = authorizationResponse.createTokenExchangeRequest();
                         this.authService.performTokenRequest(tokenExchangeRequest, new ClientSecretBasic(oauth2Options.getClientSecret()), (accessTokenResponse, exception) -> {
                             authState.update(accessTokenResponse, exception);
+
                             if (exception != null) {
                                 savedCall.reject(ERR_AUTHORIZATION_FAILED, exception);
                             } else {
@@ -420,17 +428,17 @@ public class OAuth2ClientPlugin extends Plugin {
                                                 "Access token response:\n" + accessTokenResponse.jsonSerializeString());
                                     }
                                 //Added by Moin (saving refresh token to secure storage)
-//                                   SharedPreferences sharedPreferences = getContext().getSharedPreferences("SharedPref", MODE_PRIVATE);
-//                                   SharedPreferences.Editor myEdit = sharedPreferences.edit();
-//                                   myEdit.putString("refresh_token", accessTokenResponse.refreshToken).commit();
+                                  SharedPreferences sharedPreferences = getContext().getSharedPreferences("SharedPref", MODE_PRIVATE);
+                                  SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                                  myEdit.putString("refresh_token", accessTokenResponse.refreshToken).commit();
 
-// //                                  myEdit.putString("expires_at", String.valueOf(accessTokenResponse.accessTokenExpirationTime)).commit();
-//                                   String s1 = sharedPreferences.getString("refresh_token", "");
-//                                   System.out.println("refresh token from secure storage java authenticate:-"+s1);
+                                //myEdit.putString("expires_at", String.valueOf(accessTokenResponse.accessTokenExpirationTime)).commit();
+                                  String s1 = sharedPreferences.getString("refresh_token", "");
+                                  System.out.println("refresh token from secure storage java authenticate:-"+s1);
 
-//                                   TokenResponse newAccessTokenResponse = new TokenResponse.Builder(tokenExchangeRequest).setAccessToken(accessTokenResponse.accessToken).setTokenType(accessTokenResponse.tokenType).setAccessTokenExpiresIn(accessTokenResponse.accessTokenExpirationTime).setScope(accessTokenResponse.scope).build();
+                                  TokenResponse newAccessTokenResponse = new TokenResponse.Builder(tokenExchangeRequest).setAccessToken(accessTokenResponse.accessToken).setTokenType(accessTokenResponse.tokenType).setAccessTokenExpiresIn(accessTokenResponse.accessTokenExpirationTime).setScope(accessTokenResponse.scope).build();
 
-//                                   System.out.println("new token response is " + newAccessTokenResponse.jsonSerializeString());
+                                  System.out.println("new token response is " + newAccessTokenResponse.jsonSerializeString());
 
                                     authState.performActionWithFreshTokens(authService,
                                             (accessToken, idToken, ex1) -> {
@@ -439,7 +447,7 @@ public class OAuth2ClientPlugin extends Plugin {
                                                 oauth2Options,
                                                 getLogTag(),
                                                 authorizationResponse,
-                                                accessTokenResponse);
+                                                newAccessTokenResponse);
                                               asyncTask.execute(accessToken);
                                             });
                                 } else {
@@ -552,8 +560,8 @@ public class OAuth2ClientPlugin extends Plugin {
         o.setAccessTokenEndpoint(ConfigUtils.trimToNull(
                 ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_ACCESS_TOKEN_ENDPOINT)));
         o.setScope(ConfigUtils.trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_SCOPE)));
-       o.setRefreshToken(ConfigUtils
-               .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REFRESH_TOKEN)));
+//        o.setRefreshToken(ConfigUtils
+//                .trimToNull(ConfigUtils.getOverwrittenAndroidParam(String.class, callData, PARAM_REFRESH_TOKEN)));
         o.setAdditionalResourceHeaders(
         ConfigUtils.getOverwrittenAndroidParamMap(callData, PARAM_ADDITIONAL_RESOURCE_HEADERS));
         return o;
