@@ -1,8 +1,8 @@
 import { registerPlugin } from '@capacitor/core';
 import {getProcessByKey, storeProcessByKey, createIdentifier, deleteProcessByKey} from './process-registry';
-// import { inMemoryTokenCache} from './in-memory-token-cache';
+import { inMemoryTokenCache} from './in-memory-token-cache';
 import type { OAuth2AuthenticateOptions, OAuth2ClientPlugin , AccessTokenPayload, OAuth2RefreshTokenOptions } from './definitions';
-import { setToSecureStorage, getFromSecureStorage, removeFromSecureStorage } from './capacitor-storage-cache';
+// import { setToSecureStorage, getFromSecureStorage, removeFromSecureStorage } from './capacitor-storage-cache';
 
 const OAuth2Client = registerPlugin<OAuth2ClientPlugin>('OAuth2Client', {
     web: () => import('./web').then(m => new m.OAuth2ClientPluginWeb()),
@@ -18,26 +18,28 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
     if (forceRefresh === true) {
         console.log("force refresh is true, removing access token from cache");
         
-        await removeFromSecureStorage("access_token");
-        // inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
+        // await removeFromSecureStorage("access_token");
+        inMemoryTokenCache.removeTokenPayloadFromCache(registryKey);
+        inMemoryTokenCache.removeTokenExpiresAtFromCache(registryKey);
     }
     else {
         try{
-            const tokenFromCache = await getFromSecureStorage("access_token");
+            // const tokenFromCache = await getFromSecureStorage("access_token");
+            const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
             if(tokenFromCache){
-                const expires_at = await getFromSecureStorage("expires_at");
-                console.log("found an access token in the secure storage, access token expires in",Number(expires_at)-Date.now());
-                console.log("access token expires in:= ",Number(expires_at)-Date.now()>0)
+                // const expires_at = await getFromSecureStorage("expires_at");
+                const expires_at = inMemoryTokenCache.getTokenExpiresAtFromCache(registryKey);
+                console.log("found an access token in the local memory, access token expires in",expires_at-Date.now());
 
-
-                if(Number(expires_at)-Date.now()>0){
-                    console.log("as access_token has not expired, getting it from cache ",tokenFromCache);
+                if((expires_at-Date.now())>0){
+                    console.log("as access_token has not expired, getting it from local memory ",tokenFromCache);
                     // const tokenFromCache = inMemoryTokenCache.getTokenPayloadFromCache(registryKey);
                     return tokenFromCache;
                 }
+                
             }
             else{
-                console.log("there is currently no access token in the secure storage, going to check for refresh token");
+                console.log("there is currently no access token in the local memory, going to check for refresh token in secure storage");
             }
         }catch(e){
             //do nothing here
@@ -59,9 +61,10 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
     
         payload = await process;
 
-        await setToSecureStorage(payload.access_token,"access_token")
-        await setToSecureStorage((payload.expires_at)+'',"expires_at");
-        // inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload.access_token);
+        // await setToSecureStorage(payload.access_token,"access_token")
+        // await setToSecureStorage((payload.expires_at)+'',"expires_at");
+        inMemoryTokenCache.saveTokenPayloadToCache(registryKey, payload.access_token);
+        inMemoryTokenCache.saveTokenExpiresAtToCache(registryKey, payload.expires_at);
 
         // if(payload.refresh_token){
             // await setToSecureStorage(payload.refresh_token,"refresh_token");
@@ -83,10 +86,6 @@ const getAccessTokenNative = async(_settings:OAuth2AuthenticateOptions,forceRefr
     const responsePayload: AccessTokenPayload = await process;
 
     deleteProcessByKey(registryKey);
-
-    console.log("expires_at from GATN - ",responsePayload.expires_at)
-
-    console.log("refresh token from GATN - ",responsePayload.refresh_token)
 
     return responsePayload.access_token;
 }

@@ -5,14 +5,19 @@ interface InMemoryTokenCache {
   [cacheKey: string]: string;
 }
 
+interface InMemoryExpiresAt {
+  [cacheKey: string]: number;
+}
+
 /**
  * The actual token cache
  */
 const tokenCache: InMemoryTokenCache = {};
+const expiresAt: InMemoryExpiresAt = {};
 
 export const inMemoryTokenCache: TokenCache = {
   removeTokenPayloadFromCache(cacheKey: string): void {
-        delete tokenCache[cacheKey];
+    delete tokenCache[cacheKey];
   },
 
   getTokenPayloadFromCache(cacheKey: string): string {
@@ -21,6 +26,18 @@ export const inMemoryTokenCache: TokenCache = {
 
   saveTokenPayloadToCache(cacheKey: string, token: string): void {
     tokenCache[cacheKey] = token;
+  },
+
+  removeTokenExpiresAtFromCache(cacheKey: string): void {
+    delete expiresAt[cacheKey];
+  },
+
+  getTokenExpiresAtFromCache(cacheKey: string): number {
+    return expiresAt[cacheKey];
+  },
+
+  saveTokenExpiresAtToCache(cacheKey: string, expires_at: number): void {
+    expiresAt[cacheKey] = expires_at;
   },
 };
 
